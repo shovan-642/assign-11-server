@@ -29,9 +29,25 @@ const client = new MongoClient(uri, {
       // Send a ping to confirm a successful connection
       await client.db("admin").command({ ping: 1 });
       console.log("Pinged your deployment. You successfully connected to MongoDB!");
+
+      const tutorialCollection = client.db('language-tutor').collection('tutorials');
+
+      app.post("/tutorials", async(req, res)=>{
+        const newTutorial = req.body
+        const result = await tutorialCollection.insertOne(newTutorial)
+        res.send(result)
+      })
+
+      app.get("/tutorials", async(req, res)=>{
+        const cursor = tutorialCollection.find()
+        const result =  await cursor.toArray()
+        res.send(result)
+      })
+
+
     } finally {
       // Ensures that the client will close when you finish/error
-      await client.close();
+      // await client.close();
     }
   }
   run().catch(console.dir);
