@@ -30,17 +30,24 @@ const client = new MongoClient(uri, {
       await client.db("admin").command({ ping: 1 });
       console.log("Pinged your deployment. You successfully connected to MongoDB!");
 
-      const tutorialCollection = client.db('language-tutor').collection('tutorials');
+      const tutorialCollection = client.db('language-tutor').collection('tutor');
 
-      app.post("/tutorials", async(req, res)=>{
+      app.post("/tutor", async(req, res)=>{
         const newTutorial = req.body
         const result = await tutorialCollection.insertOne(newTutorial)
         res.send(result)
       })
 
-      app.get("/tutorials", async(req, res)=>{
+      app.get("/tutor", async(req, res)=>{
         const cursor = tutorialCollection.find()
         const result =  await cursor.toArray()
+        res.send(result)
+      })
+
+      app.get("/myTutorials", async(req,res)=>{
+        const email =  req.query.email
+        const query = {tutor_email: email}
+        const result = await tutorialCollection.find(query).toArray()
         res.send(result)
       })
 
