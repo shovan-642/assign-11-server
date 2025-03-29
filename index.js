@@ -51,7 +51,13 @@ const client = new MongoClient(uri, {
       })
 
       app.get("/tutor", async(req, res)=>{
-        const cursor = tutorialCollection.find()
+        const {search} = req.query
+        let option = {}
+        if(search){
+          option={language: {$regex: search, $options:"i"}}
+        }
+
+        const cursor = tutorialCollection.find(option)
         const result =  await cursor.toArray()
         res.send(result)
       })
