@@ -25,12 +25,12 @@ const client = new MongoClient(uri, {
   async function run() {
     try {
       // Connect the client to the server	(optional starting in v4.7)
-      await client.connect();
       // Send a ping to confirm a successful connection
-      // await client.db("admin").command({ ping: 1 });
+
       console.log("Pinged your deployment. You successfully connected to MongoDB!");
 
       const tutorialCollection = client.db('language-tutor').collection('tutor');
+      const bookTutorCollection = client.db('language-tutor').collection('book-tutor');
 
       app.post("/", async(req, res)=>{
         const newTutorial = req.body
@@ -38,8 +38,20 @@ const client = new MongoClient(uri, {
         res.send(result)
       })
 
+      app.post("/bookTutor", async(req, res)=>{
+        const bookTutor = req.body
+        const result = await bookTutorCollection.insertOne(bookTutor)
+        res.send(result)
+      })
+
       app.get("/tutor", async(req, res)=>{
         const cursor = tutorialCollection.find()
+        const result =  await cursor.toArray()
+        res.send(result)
+      })
+
+      app.get("/bookTutor", async(req, res)=>{
+        const cursor = bookTutorCollection.find()
         const result =  await cursor.toArray()
         res.send(result)
       })
@@ -85,6 +97,12 @@ const client = new MongoClient(uri, {
         const email =  req.query?.email
         const query = {tutor_email: email}
         const result = await tutorialCollection.find(query).toArray()
+        res.send(result)
+      })
+      app.get("/myBookTutor", async(req,res)=>{
+        const email =  req.query?.email
+        const query = {userEmail: email}
+        const result = await bookTutorCollection.find(query).toArray()
         res.send(result)
       })
 
