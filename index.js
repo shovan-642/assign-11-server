@@ -6,8 +6,14 @@ require('dotenv').config();
 const app = express()
 const port = process.env.PORT || 3000;
 
+const corsOptions = {
+  origin: "http://localhost:5173",
+  methods: "GET, POST, DELETE, PATCH, PUT",
+  allowHeaders: 'Content-Type',
+}
 
-app.use(cors())
+
+app.use(cors(corsOptions))
 app.use(express.json())
 
 
@@ -56,6 +62,16 @@ const client = new MongoClient(uri, {
         res.send(result)
       })
 
+      app.patch("/review/:id", async(req,res)=>{
+        const id = req.params.id
+        const filter = {_id : new ObjectId(id)}
+        const updateReview = {
+          $inc : {review: 1}
+        }
+        const result = await tutorialCollection.updateOne(filter, updateReview)
+        res.send(result)
+      })
+
       app.put('/tutor/:id', async(req, res)=>{
         const id = req.params.id
         const filter = {_id: new ObjectId(id)}
@@ -90,6 +106,13 @@ const client = new MongoClient(uri, {
         console.log(id)
         const query = {_id: new ObjectId(id)}
         const result = await tutorialCollection.findOne(query)
+        res.send(result)
+      })
+
+      app.get("/bookTutor/:id", async(req,res)=>{
+        const id =  req.params.id
+        const query = {tutorId: new ObjectId(id)}
+        const result = await bookTutorCollection.findOne(query)
         res.send(result)
       })
 
