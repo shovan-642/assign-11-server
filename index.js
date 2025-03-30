@@ -1,20 +1,36 @@
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const express = require('express');
 const cors = require('cors');
+const jwt = require('jsonwebtoken')
+const cookieParser = require('cookie-parser')
 require('dotenv').config();
 
 const app = express()
 const port = process.env.PORT || 3000;
 
-const corsOptions = {
-  origin: "http://localhost:5173",
-  methods: "GET, POST, DELETE, PATCH, PUT",
-  allowHeaders: 'Content-Type',
-}
 
+app.use(cors({
+  origin: ["http://localhost:5173"],
+  credentials: true,
+}))
 
-app.use(cors(corsOptions))
 app.use(express.json())
+app.use(cookieParser())
+
+const verifyToken = (req, res, next)=>{
+  const token = req.cookies?.token
+  console.log( token)
+  if(!token){
+    return res.status(401).send({message: 'Unauthorized Token'})
+  }
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded)=>{
+    if(err){
+      return res.status(401).send({message: 'Unauthorized Token'})
+    }
+    req.user = decoded
+    next()
+  })
+}
 
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@assignment-10.9gvo9.mongodb.net/?appName=assignment-10`;
@@ -50,13 +66,34 @@ const client = new MongoClient(uri, {
         res.send(result)
       })
 
+      app.post("/jwt", async(req, res)=>{
+        const user = req.body 
+        const token = jwt.sign(user, process.env.JWT_SECRET, {expiresIn: "5h"} )
+        res.cookie('token', token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV || "production",
+          sameSite: "None"
+        }).send({success: true})
+      })
+
+      app.post("/logout", (req, res)=>{
+        res.clearCookie('token', {
+          httpOnly: true, 
+          secure: false,
+
+        })
+        .send({success: true})
+      })
+
+
+
+
       app.get("/tutor", async(req, res)=>{
         const {search} = req.query
         let option = {}
         if(search){
           option={language: {$regex: search, $options:"i"}}
         }
-
         const cursor = tutorialCollection.find(option)
         const result =  await cursor.toArray()
         res.send(result)
@@ -122,15 +159,26 @@ const client = new MongoClient(uri, {
         res.send(result)
       })
 
-      app.get("/myTutorials", async(req,res)=>{
+      app.get("/myTutorials", verifyToken, async(req,res)=>{
         const email =  req.query?.email
         const query = {tutor_email: email}
+
+        if(req.user.email !== req.query.email){
+          return res.status(403).send({message: "Forbidden Access"})          
+        }        
+
         const result = await tutorialCollection.find(query).toArray()
         res.send(result)
       })
-      app.get("/myBookTutor", async(req,res)=>{
+
+      app.get("/myBookTutor", verifyToken, async(req,res)=>{
         const email =  req.query?.email
         const query = {userEmail: email}
+        
+        if(req.user.email !== req.query.email){
+          return res.status(403).send({message: "Forbidden Access"})          
+        }
+
         const result = await bookTutorCollection.find(query).toArray()
         res.send(result)
       })
