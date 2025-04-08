@@ -10,14 +10,17 @@ const port = process.env.PORT || 3000;
 
 
 app.use(cors({
-  origin: ["http://localhost:5173", "https://assignment-11-d8915.web.app/"],
+  origin: ["https://assignment-11-d8915.web.app", "http://localhost:5173"],
   credentials: true,
-  methods: ["GET", "POST", "PATCH", "DELETE"], 
-  allowedHeaders: ["Content-Type", "Authorization"]
+  methods: ["GET", "POST", "PATCH", "PUT", "DELETE"]
 }))
+
+app.options('*', cors());
+
 
 app.use(express.json())
 app.use(cookieParser())
+
 
 const verifyToken = (req, res, next)=>{
   const token = req.cookies?.token
@@ -73,15 +76,16 @@ const client = new MongoClient(uri, {
         const token = jwt.sign(user, process.env.JWT_SECRET, {expiresIn: "5h"} )
         res.cookie('token', token, {
           httpOnly: true,
-          secure: process.env.NODE_ENV || "production",
-          sameSite: "None"
+          secure:  process.env.NODE_ENV || "production",
+          sameSite: "None",
         }).send({success: true})
       })
 
       app.post("/logout", (req, res)=>{
         res.clearCookie('token', {
           httpOnly: true, 
-          secure: false,
+          secure:  process.env.NODE_ENV || "production",
+          sameSite: "None",
 
         })
         .send({success: true})
